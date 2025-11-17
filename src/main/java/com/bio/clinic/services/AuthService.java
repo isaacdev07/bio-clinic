@@ -1,7 +1,7 @@
 package com.bio.clinic.services;
 
 import com.bio.clinic.dtos.CadastroDTO;
-import com.bio.clinic.dtos.LoginDTO; // Importe o LoginDTO
+import com.bio.clinic.dtos.LoginDTO;
 import com.bio.clinic.entities.User;
 import com.bio.clinic.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,6 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
 
-    // ATUALIZE O CONSTRUTOR para incluir os novos serviços
     @Autowired
     public AuthService(
             UserRepository userRepository,
@@ -33,31 +32,71 @@ public class AuthService {
     }
 
     public void cadastrar(CadastroDTO cadastroDTO) {
-        if (userRepository.findByCpf(cadastroDTO.getCpf()).isPresent()) {
+        // Remove máscara do CPF, se houver, antes de salvar
+        String cleanCpf = cadastroDTO.getCpf().replaceAll("[.\\-\\/]", "");
+        
+        if (userRepository.findByCpf(cleanCpf).isPresent()) {
             throw new RuntimeException("Este CPF já está cadastrado.");
         }
 
         String senhaCriptografada = passwordEncoder.encode(cadastroDTO.getSenha());
-        User newUser = new User(cadastroDTO.getNome(), senhaCriptografada, cadastroDTO.getCpf());
+        User newUser = new User(cadastroDTO.getNome(), senhaCriptografada, cleanCpf);
 
         userRepository.save(newUser);
     }
 
-    // --- NOVO MÉTODO DE LOGIN ADICIONADO ---
     public String login(LoginDTO loginDTO) {
-        // 1. Usa o AuthenticationManager para validar o CPF e a senha
+        // Remove máscara do CPF, se houver, antes de autenticar
+        String cleanCpf = loginDTO.getCpf().replaceAll("[.\\-\\/]", "");
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginDTO.getCpf(),
+                        cleanCpf, // Usa CPF limpo
                         loginDTO.getSenha()
                 )
         );
 
-        // 2. Se a autenticação passar, busca o usuário no banco
-        var user = userRepository.findByCpf(loginDTO.getCpf())
+        var user = userRepository.findByCpf(cleanCpf)
                 .orElseThrow(() -> new IllegalStateException("Usuário não encontrado após autenticação."));
 
-        // 3. Gera e retorna o token JWT
+        return jwtService.generateToken(user);
+    }
+
+    // --- NOVO MÉTODO (LOGIN FACIAL 1) ---
+    /**
+     * Busca o descritor facial de um usuário pelo CPF.
+     * @param cpf O CPF do usuário (pode estar com máscara).
+     * @return A string do descritor facial.
+     */
+    public String getFaceDescriptor(String cpf) {
+        String cleanCpf = cpf.replaceAll("[.\\-\\/]", "");
+        
+        User user = userRepository.findByCpf(cleanCpf)
+                .orElseThrow(() -> new RuntimeException("CPF não encontrado."));
+
+        String descriptor = user.getFaceDescriptor();
+        
+        if (descriptor == null || descriptor.isEmpty()) {
+            throw new RuntimeException("Nenhum rosto cadastrado para este CPF.");
+        }
+        
+        return descriptor;
+    }
+
+    // --- NOVO MÉTODO (LOGIN FACIAL 2) ---
+    /**
+     * Gera um token JWT para um usuário com base apenas no CPF.
+     * Usado após o frontend validar o rosto.
+     * @param cpf O CPF do usuário (pode estar com máscara).
+     * @return O token JWT.
+     */
+    public String loginWithFace(String cpf) {
+        String cleanCpf = cpf.replaceAll("[.\\-\\/]", "");
+
+        var user = userRepository.findByCpf(cleanCpf)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+
+        // Gera o token diretamente, sem checar senha
         return jwtService.generateToken(user);
     }
 }

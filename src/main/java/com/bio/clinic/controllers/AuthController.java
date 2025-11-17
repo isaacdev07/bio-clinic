@@ -1,17 +1,14 @@
 package com.bio.clinic.controllers;
 
-// Adicione a importação para o LoginDTO
 import com.bio.clinic.dtos.LoginDTO;
 import com.bio.clinic.dtos.CadastroDTO;
+import com.bio.clinic.dtos.FaceLoginRequest; // <-- IMPORTAR NOVO DTO
 import com.bio.clinic.services.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*; // <-- MUDAR PARA @*
 
 @RestController
 @RequestMapping("/auth")
@@ -34,16 +31,40 @@ public class AuthController {
         }
     }
 
-    // --- NOVO ENDPOINT DE LOGIN ADICIONADO ---
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginDTO loginDTO) {
         try {
-            // Chama o método de login do serviço, que retorna o token
             String token = authService.login(loginDTO);
-            return ResponseEntity.ok(token);
+            // ATENÇÃO: Retorne o token como um JSON para facilitar no frontend
+            // Ex: {"token": "seu.token.aqui"}
+            return ResponseEntity.ok("{\"token\": \"" + token + "\"}");
         } catch (Exception e) {
-            // Captura falhas de autenticação (usuário/senha errados)
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("CPF ou senha inválidos.");
+        }
+    }
+
+    // --- ENDPOINT 1 (LOGIN FACIAL) ---
+    // Busca o descritor facial salvo no banco para este CPF
+    @GetMapping("/face-descriptor/{cpf}")
+    public ResponseEntity<String> getFaceDescriptor(@PathVariable String cpf) {
+        try {
+            String descriptor = authService.getFaceDescriptor(cpf);
+            return ResponseEntity.ok(descriptor); // Retorna a string longa do descritor
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    // --- ENDPOINT 2 (LOGIN FACIAL) ---
+    // O frontend validou o rosto e agora só pede o token
+    @PostMapping("/login-face")
+    public ResponseEntity<String> loginWithFace(@RequestBody FaceLoginRequest loginRequest) {
+        try {
+            String token = authService.loginWithFace(loginRequest.getCpf());
+            // Retorna o token da mesma forma que o login padrão
+            return ResponseEntity.ok("{\"token\": \"" + token + "\"}");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
 }

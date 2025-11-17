@@ -11,7 +11,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-// Anotações do Lombok removidas
 @Entity
 @Table(name = "tb_user")
 public class User implements UserDetails {
@@ -31,6 +30,13 @@ public class User implements UserDetails {
     @Column(unique = true, name = "cpf")
     private String cpf;
     
+    // --- ADICIONADO ---
+    // Define uma coluna com tamanho grande para o descritor facial.
+    // 4000 é um bom tamanho. Se estourar, pode mudar para @Lob (Large Object).
+    @Column(length = 4000)
+    private String faceDescriptor;
+    // --- FIM DA ADIÇÃO ---
+    
     // --- CONSTRUTORES, GETTERS, SETTERS, ETC ---
 
     // Construtor vazio (requerido pelo JPA)
@@ -38,6 +44,7 @@ public class User implements UserDetails {
     }
 
     // Construtor para facilitar a criação de novos usuários
+    // Não incluímos o faceDescriptor aqui, pois ele é cadastrado DEPOIS
     public User(String nome, String senha, String cpf) {
         this.nome = nome;
         this.senha = senha;
@@ -54,6 +61,11 @@ public class User implements UserDetails {
     public String getCpf() { return cpf; }
     public void setCpf(String cpf) { this.cpf = cpf; }
 
+
+    public String getFaceDescriptor() { return faceDescriptor; }
+    public void setFaceDescriptor(String faceDescriptor) { this.faceDescriptor = faceDescriptor; }
+    
+
     // --- Métodos da interface UserDetails ---
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -63,7 +75,6 @@ public class User implements UserDetails {
     public String getPassword() { return this.senha; }
     @Override
     public String getUsername() { return this.cpf; }
-    // ... os outros métodos isAccountNonExpired, etc., continuam iguais
     @Override
     public boolean isAccountNonExpired() { return true; }
     @Override
@@ -73,7 +84,7 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() { return true; }
 
-    // equals() e hashCode() são boas práticas para entidades
+    // equals() e hashCode() (corretos, não precisam do faceDescriptor)
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
