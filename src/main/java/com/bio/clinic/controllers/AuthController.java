@@ -81,7 +81,7 @@ public class AuthController {
     
     @PostMapping("/login-nome")
     public ResponseEntity<?> loginPorNome(@RequestBody LoginNomeDTO loginDTO) {
-        try {
+        try {  
             String token = authService.loginPorNome(loginDTO);
             // Retorna no mesmo formato JSON dos outros logins
             return ResponseEntity.ok("{\"token\": \"" + token + "\"}");
