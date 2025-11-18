@@ -16,5 +16,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return um Optional contendo o usuário, se encontrado, ou vazio caso contrário.
      */
     Optional<User> findByCpf(String cpf);
+    
+    Optional<User> findByNome(String nome);
 
 }

@@ -1,15 +1,21 @@
 package com.bio.clinic.entities;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+
 import org.hibernate.validator.constraints.br.CPF;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
 
 @Entity
 @Table(name = "tb_user")
@@ -20,6 +26,7 @@ public class User implements UserDetails {
     private Long id;
 
     @NotBlank(message = "O nome é obrigatório")
+    @Column(unique = true)
     private String nome;
 
     @NotBlank(message = "A senha é obrigatória")
@@ -29,10 +36,7 @@ public class User implements UserDetails {
     @NotBlank(message = "O CPF é obrigatório")
     @Column(unique = true, name = "cpf")
     private String cpf;
-    
-    // --- ADICIONADO ---
-    // Define uma coluna com tamanho grande para o descritor facial.
-    // 4000 é um bom tamanho. Se estourar, pode mudar para @Lob (Large Object).
+
     @Column(length = 4000)
     private String faceDescriptor;
     // --- FIM DA ADIÇÃO ---

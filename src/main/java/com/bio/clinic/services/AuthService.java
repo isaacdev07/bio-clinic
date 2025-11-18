@@ -1,14 +1,16 @@
 package com.bio.clinic.services;
 
-import com.bio.clinic.dtos.CadastroDTO;
-import com.bio.clinic.dtos.LoginDTO;
-import com.bio.clinic.entities.User;
-import com.bio.clinic.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import com.bio.clinic.dtos.CadastroDTO;
+import com.bio.clinic.dtos.LoginDTO;
+import com.bio.clinic.dtos.LoginNomeDTO;
+import com.bio.clinic.entities.User;
+import com.bio.clinic.repositories.UserRepository;
 
 @Service
 public class AuthService {
@@ -97,6 +99,21 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
 
         // Gera o token diretamente, sem checar senha
+        return jwtService.generateToken(user);
+    }
+    
+    public String loginPorNome(LoginNomeDTO loginNomeDTO) {
+        // 1. Busca o usuário pelo nome no banco
+        User user = userRepository.findByNome(loginNomeDTO.getNome())
+                .orElseThrow(() -> new RuntimeException("Usuário com este nome não encontrado."));
+
+        // 2. Verifica manualmente se a senha bate
+        // O primeiro argumento é a senha pura (que veio do front), o segundo é a criptografada do banco
+        if (!passwordEncoder.matches(loginNomeDTO.getSenha(), user.getSenha())) {
+            throw new RuntimeException("Senha incorreta.");
+        }
+
+        // 3. Se a senha estiver certa, gera o token
         return jwtService.generateToken(user);
     }
 }
