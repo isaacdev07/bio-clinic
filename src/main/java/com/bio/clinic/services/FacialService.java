@@ -24,7 +24,7 @@ public class FacialService {
     public void registerFace(String descriptor) {
         // 1. Pega o usuário que está autenticado (logado)
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String userCpf = authentication.getName(); // Isso pega o CPF (username) do token
+        String userCpf = authentication.getName(); 
 
         // 2. Busca o usuário no banco
         User user = userRepository.findByCpf(userCpf)
