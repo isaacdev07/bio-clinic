@@ -39,11 +39,7 @@ public class User implements UserDetails {
 
     @Column(length = 4000)
     private String faceDescriptor;
-    // --- FIM DA ADIÇÃO ---
-    
-    // --- CONSTRUTORES, GETTERS, SETTERS, ETC ---
-
-    // Construtor vazio (requerido pelo JPA)
+   
     public User() {
     }
 

@@ -10,10 +10,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.bio.clinic.dtos.DadosAgendamentoConsulta;
+import com.bio.clinic.dtos.DadosCheckin;
 import com.bio.clinic.entities.Consulta;
 import com.bio.clinic.entities.Medico;
 import com.bio.clinic.repositories.ConsultaRepository;
 import com.bio.clinic.repositories.MedicoRepository;
+import com.bio.clinic.utils.GeoUtils;
 
 @Service
 public class AgendaService {
@@ -104,5 +106,38 @@ public class AgendaService {
             throw new RuntimeException("Consulta não encontrada!");
         }
         consultaRepository.deleteById(idConsulta);
+    }
+    
+ // Defina as coordenadas da SUA Clínica (Pegue no Google Maps)
+    // Exemplo: Av. Paulista, SP
+    private static final double LAT_CLINICA = -23.64826;
+    private static final double LON_CLINICA = -46.72211;
+    
+    // Distância máxima permitida em metros (Geofence)
+    private static final double DISTANCIA_MAXIMA_METROS = 200.0;
+
+    public void realizarCheckin(DadosCheckin dados) {
+        // 1. Busca a consulta
+        Consulta consulta = consultaRepository.findById(dados.getIdConsulta())
+                .orElseThrow(() -> new RuntimeException("Consulta não encontrada!"));
+
+        // 2. Calcula a distância entre o Paciente e a Clínica
+        double distancia = GeoUtils.calcularDistanciaEmMetros(
+                dados.getLatitude(), 
+                dados.getLongitude(), 
+                LAT_CLINICA, 
+                LON_CLINICA
+        );
+
+        System.out.println("Distância do usuário: " + distancia + " metros.");
+
+        // 3. Valida se está perto o suficiente
+        if (distancia > DISTANCIA_MAXIMA_METROS) {
+            throw new RuntimeException("Check-in recusado! Você está a " + (int)distancia + 
+                                     "m da clínica. Aproxime-se para confirmar.");
+        }
+
+        
+        // Por enquanto, só vamos logar ou retornar sucesso
     }
 }

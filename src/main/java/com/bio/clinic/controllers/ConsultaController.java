@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bio.clinic.dtos.DadosAgendamentoConsulta;
+import com.bio.clinic.dtos.DadosCheckin;
 import com.bio.clinic.entities.Consulta;
 import com.bio.clinic.services.AgendaService;
 
@@ -57,6 +58,16 @@ public class ConsultaController {
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+    @PostMapping("/checkin")
+    public ResponseEntity realizarCheckin(@RequestBody DadosCheckin dados) {
+        try {
+            service.realizarCheckin(dados);
+            return ResponseEntity.ok("Check-in realizado com sucesso! Presença confirmada.");
+        } catch (Exception e) {
+            // Retorna 400 (Bad Request) com a mensagem de erro (ex: Longe demais)
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }
