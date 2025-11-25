@@ -1,6 +1,7 @@
 package com.bio.clinic.services;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,7 @@ import com.bio.clinic.dtos.DadosAgendamentoConsulta;
 import com.bio.clinic.dtos.DadosCheckin;
 import com.bio.clinic.entities.Consulta;
 import com.bio.clinic.entities.Medico;
+import com.bio.clinic.enums.StatusConsulta; 
 import com.bio.clinic.repositories.ConsultaRepository;
 import com.bio.clinic.repositories.MedicoRepository;
 import com.bio.clinic.utils.GeoUtils;
@@ -25,6 +27,11 @@ public class AgendaService {
 
     @Autowired
     private MedicoRepository medicoRepository;
+
+    // Coordenadas da Clínica
+    private static final double LAT_CLINICA = -23.64826;
+    private static final double LON_CLINICA = -46.72211;
+    private static final double DISTANCIA_MAXIMA_METROS = 200.0;
 
     /**
      * Método para agendar uma consulta.
@@ -50,6 +57,9 @@ public class AgendaService {
         consulta.setPacienteId(dados.getIdPaciente());
         consulta.setDataHora(dados.getDataHora());
         consulta.setTipoConsulta(dados.getTipoConsulta());
+        
+        // Define status inicial
+        consulta.setStatus(StatusConsulta.AGENDADA);
 
         // 4. Salva no banco
         return consultaRepository.save(consulta);
@@ -63,36 +73,29 @@ public class AgendaService {
     }
 
     /**
-     * NOVO: Lista apenas os horários disponíveis para um médico em uma data específica.
+     * Lista apenas os horários disponíveis para um médico em uma data específica.
      * Regra de negócio: Consultas de 1h em 1h, das 08:00 às 18:00.
      */
     public List<LocalTime> listarHorariosDisponiveis(Long idMedico, LocalDate data) {
         
-        // Valida se médico existe antes de processar
         if (!medicoRepository.existsById(idMedico)) {
              throw new RuntimeException("Médico não encontrado!");
         }
 
-        // 1. Busca todas as consultas ocupadas naquele dia (00:00 até 23:59)
-        // Nota: Certifique-se de ter adicionado o método findByMedicoIdAndDataHoraBetween no Repository
         List<Consulta> agendamentos = consultaRepository.findByMedicoIdAndDataHoraBetween(
                 idMedico, 
                 data.atStartOfDay(), 
                 data.atTime(23, 59, 59)
         );
 
-        // 2. Extrai apenas a HORA dos agendamentos (Ignora data e outros dados)
         List<LocalTime> horariosOcupados = agendamentos.stream()
                 .map(consulta -> consulta.getDataHora().toLocalTime())
                 .collect(Collectors.toList());
 
-        // 3. Calcula os horários livres (Das 08:00 as 18:00)
         List<LocalTime> horariosDisponiveis = new ArrayList<>();
         
         for (int hora = 8; hora < 18; hora++) {
-            LocalTime horarioAnalise = LocalTime.of(hora, 0); // Cria 08:00, 09:00...
-
-            // Se NÃO estiver na lista de ocupados, adiciona na lista de disponíveis
+            LocalTime horarioAnalise = LocalTime.of(hora, 0); 
             if (!horariosOcupados.contains(horarioAnalise)) {
                 horariosDisponiveis.add(horarioAnalise);
             }
@@ -108,17 +111,31 @@ public class AgendaService {
         consultaRepository.deleteById(idConsulta);
     }
     
-
-    private static final double LAT_CLINICA = -23.64826;
-    private static final double LON_CLINICA = -46.72211;
-    
-
-    private static final double DISTANCIA_MAXIMA_METROS = 200.0;
-
+    /**
+     * Realiza o Check-in validando:
+     * 1. Janela de Tempo (30 min antes)
+     * 2. Localização (Geofencing)
+     */
     public void realizarCheckin(DadosCheckin dados) {
         // 1. Busca a consulta
         Consulta consulta = consultaRepository.findById(dados.getIdConsulta())
                 .orElseThrow(() -> new RuntimeException("Consulta não encontrada!"));
+
+
+        LocalDateTime horarioConsulta = consulta.getDataHora();
+        LocalDateTime agora = LocalDateTime.now();
+        LocalDateTime inicioPermitido = horarioConsulta.minusMinutes(30);
+
+        // Se agora for ANTES do inicio permitido (ex: tentando 1 hora antes)
+        if (agora.isBefore(inicioPermitido)) {
+             throw new RuntimeException("Check-in ainda não disponível! Você só pode validar sua presença 30 minutos antes do horário (" 
+             + horarioConsulta.toLocalTime() + ").");
+        }
+
+        if (agora.isAfter(horarioConsulta.plusMinutes(15))) {
+             throw new RuntimeException("O horário desta consulta já expirou.");
+        }
+
 
         // 2. Calcula a distância entre o Paciente e a Clínica
         double distancia = GeoUtils.calcularDistanciaEmMetros(
@@ -136,7 +153,8 @@ public class AgendaService {
                                      "m da clínica. Aproxime-se para confirmar.");
         }
 
-        
-        // Por enquanto, só vamos logar ou retornar sucesso
+        // 4. Atualiza status
+        consulta.setStatus(StatusConsulta.CONFIRMADA);
+        consultaRepository.save(consulta);
     }
 }

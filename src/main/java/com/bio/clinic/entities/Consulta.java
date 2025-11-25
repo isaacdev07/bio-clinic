@@ -1,7 +1,19 @@
 package com.bio.clinic.entities;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
+
+import com.bio.clinic.enums.StatusConsulta;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Table(name = "consultas")
 @Entity(name = "Consulta")
@@ -17,19 +29,23 @@ public class Consulta {
 
     private Long pacienteId;
     private LocalDateTime dataHora;
-    private String tipoConsulta; // Ex: Presencial, Online
+    private String tipoConsulta;
+    
+    @Enumerated(EnumType.STRING)
+    private StatusConsulta status;
 
     // 1. Construtor Vazio
     public Consulta() {
     }
 
     // 2. Construtor Completo
-    public Consulta(Long id, Medico medico, Long pacienteId, LocalDateTime dataHora, String tipoConsulta) {
+    public Consulta(Long id, Medico medico, Long pacienteId, LocalDateTime dataHora, String tipoConsulta, StatusConsulta status) {
         this.id = id;
         this.medico = medico;
         this.pacienteId = pacienteId;
         this.dataHora = dataHora;
         this.tipoConsulta = tipoConsulta;
+        this.status = status;
     }
 
     // --- GETTERS E SETTERS ---
@@ -72,5 +88,12 @@ public class Consulta {
 
     public void setTipoConsulta(String tipoConsulta) {
         this.tipoConsulta = tipoConsulta;
+    }
+    public StatusConsulta getStatus() {
+        return status;
+    }
+
+    public void setStatus(StatusConsulta status) {
+        this.status = status;
     }
 }
