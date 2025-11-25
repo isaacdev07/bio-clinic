@@ -108,12 +108,11 @@ public class AgendaService {
         consultaRepository.deleteById(idConsulta);
     }
     
- // Defina as coordenadas da SUA Clínica (Pegue no Google Maps)
-    // Exemplo: Av. Paulista, SP
+
     private static final double LAT_CLINICA = -23.64826;
     private static final double LON_CLINICA = -46.72211;
     
-    // Distância máxima permitida em metros (Geofence)
+
     private static final double DISTANCIA_MAXIMA_METROS = 200.0;
 
     public void realizarCheckin(DadosCheckin dados) {
