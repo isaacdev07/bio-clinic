@@ -6,7 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-
+// class medico with necessary methods
 @Table(name = "medicos")
 @Entity(name = "Medico")
 public class Medico {
