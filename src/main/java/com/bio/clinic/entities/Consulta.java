@@ -14,7 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-
+// class consulta finished
 @Table(name = "consultas")
 @Entity(name = "Consulta")
 public class Consulta {
