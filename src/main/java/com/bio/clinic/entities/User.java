@@ -16,7 +16,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
-
+// class user with user details
 @Entity
 @Table(name = "tb_user")
 public class User implements UserDetails {
